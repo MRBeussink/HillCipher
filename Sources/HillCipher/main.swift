@@ -1,9 +1,26 @@
+import Foundation
+import Utility
 import HillCipherCore
 
-let hill = HillCipher()
+
+let parser = ArgumentParser(commandName: "hill", usage: "[options]",
+                            overview: "Preforms Hill encryption or decryption of message string.")
+let encrypt = parser.add(option: "--encrypt", shortName: "-e", kind: Bool.self,
+                         usage: "Turn on encryption")
+let decrypt = parser.add(option: "--decrypt", shortName: "-d", kind: Bool.self,
+                         usage: "Turn on decryption")
+
+let arguments = Array(CommandLine.arguments.dropFirst())
 
 do {
-    try hill.run()
+    let result = try parser.parse(arguments)
+    
+   
+    
+    print(result)
 } catch {
-    print("Whoops!  Something went wrong.")
+    print(error)
 }
+
+
+print("やった")
