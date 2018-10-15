@@ -14,10 +14,11 @@ let arguments = Array(CommandLine.arguments.dropFirst())
 
 do {
     let result = try parser.parse(arguments)
+    //let codec = HillCipher()
     
-   
-    
-    print(result)
+    if let _ = result.get(encrypt) {
+        
+    }
 } catch {
     print(error)
 }

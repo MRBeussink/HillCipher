@@ -16,10 +16,10 @@ let package = Package(
         // Targets can depend on other targets in this package, and on products in packages which this package depends on.
         .target(
             name: "HillCipher",
-            dependencies: ["HillCipherCore"]),
+            dependencies: ["HillCipherCore", "Utility"]),
         .target(
             name: "HillCipherCore",
-            dependencies: ["Surge", "Utility"]),
+            dependencies: ["Surge"]),
         .testTarget(
             name: "HillCipherTests",
             dependencies: ["HillCipher"]),
