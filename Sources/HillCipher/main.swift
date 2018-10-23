@@ -13,12 +13,31 @@ let decrypt = parser.add(option: "--decrypt", shortName: "-d", kind: Bool.self,
 let arguments = Array(CommandLine.arguments.dropFirst())
 
 do {
-    let result = try parser.parse(arguments)
-    //let codec = HillCipher()
     
-    if let _ = result.get(encrypt) {
+    let result = try parser.parse(arguments)
+    var flag = CodecFlag.neither
+    
+    if arguments.isEmpty {
+        flag = .both
+    } else {
+        let encode = result.get(encrypt)!
+        let decode = result.get(decrypt)!
         
+        if encode && decode {
+            flag = .both
+        } else if encode {
+            flag = .encode
+        } else if decode {
+            flag = .decode
+        } else {
+            print("Flag not set")
+        }
     }
+    
+    
+    var codec = try HillCipher(codec: flag)
+    
+    codec.run()
 } catch {
     print(error)
 }

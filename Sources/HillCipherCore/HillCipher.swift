@@ -9,14 +9,16 @@ public enum CodecFlag {
     case encode
     case decode
     case both
+    case neither
 }
 
 
-public enum HillCipherKeyError : Error {
+public enum HillCipherError : Error {
     case InvalidKeySize
     case InvalidKeyElement
     case SingularMatrix
     case NoModularInverse
+    case InvalidMessageLength
 }
 
 
@@ -26,73 +28,37 @@ public final class HillCipher {
     private var key = [[Int]]()
     private var codec: CodecFlag
     
+    private static let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXZY"
+    
 
-    public init(message: String?, key: String?, codec: CodecFlag) throws {
+    public init(codec: CodecFlag, message: String? = nil, key: String? = nil) throws {
         
         self.codec = codec
         
         // validate message
-        if let message = message {
-            self.message = message
-        } else {
-            var valid = false
-            repeat {
-                print("Enter message: ")
-                
-                if let line = readLine() {
-                    self.message = line
-                    valid = true
-                }
-                
-            } while !valid
-            
-        }
+        validate(message: message)
         
         // validate key
-        if let key = key {
-            let strs = key.split(separator: " ")
-            if strs.count == 4 {
-                
-            } else if strs.count == 9 {
-                
-            } else {
-                throw HillCipherKeyError.InvalidKeySize
-            }
-            
-        } else {
-            var nums = [[Int]]()
-            var valid = false
-            repeat {
-                print("Enter each row of key with elements seperated by ")
-                
-                var inputs = [[String]]()
-            
-                for i in 0...3 {
-                    if let line = readLine() {
-                        for s in line.split(separator: " ") {
-                            if let num = Int(s) {
-                                nums[i].append(num)
-                            } else {
-                                fatalError("Key must only contain integers")
-                            }
-                        }
-                    }
-                if inputs[0].count != inputs.count { break }
-                }
-                
-                do {
-                    try valid = validate(nums)
-                } catch {
-                    print(error)
-                    nums = [[Int]]()
-                }
-                
-            } while !valid
+        do {
+            try validate(key: key)
+        } catch {
+            throw error
+        }
+        
+        // check that message and key sizes correspond
+        if self.message.count % self.key[0].count != 0 {
+            throw HillCipherError.InvalidMessageLength
         }
     }
     
     
     public func run() {
+        print(message)
+        
+        for row in key {
+            print(row)
+        }
+        
         print("やった")
     }
     
@@ -112,29 +78,81 @@ public final class HillCipher {
     
     // MARK: Validation
     
-    private func validate(_ key: [[Int]]) throws -> Bool {
+    private func validate(message: String?) {
+        
+        if let message = message {
+            self.message = message
+        } else {
+            var valid = false
+            repeat {
+                print("Enter message: ")
+                
+                if let line = readLine() {
+                    self.message = line
+                    valid = true
+                }
+                
+            } while !valid
+        }
+    }
+    
+    private func validate(key: String?) throws {
+        if let key = key {
+            let strs = key.split(separator: " ")
+            let nums = strs.map { return Int($0)!}
+            let c = nums.count
+            
+            if c == 4 {
+                self.key = [[nums[0], nums[1]],
+                            [nums[2], nums[3]]]
+            } else if c == 9 {
+                self.key = [[nums[0], nums[1], nums[2]],
+                            [nums[3], nums[4], nums[5]],
+                            [nums[6], nums[7], nums[8]]]
+            }
+        } else {
+            var nums = [[Int]]()
+            var lines = [String]()
+            
+            print("Enter each row of key with elements seperated by spaces: ")
+            repeat {
+                let line = readLine()!
+                let row = line.split(separator: " ")
+                lines.append(line)
+                nums.append( row.map { Int($0)! } )
+            } while nums[0].count != lines.count
+            
+            do {
+                try validate(key: nums)
+                self.key = nums
+            } catch {
+                throw error
+            }
+        }
+    }
+    
+    private func validate(key: [[Int]]) throws {
         
         guard key.count == key[0].count && ( key.count == 2 || key.count == 3 )
-            else { throw HillCipherKeyError.InvalidKeySize }
+            else { throw HillCipherError.InvalidKeySize }
         
         let floats = key.map { $0.map { Float($0) } }
         let detKey = det(Matrix(floats))!
         
         // (1) validate that key is nonsingular matrix, i.e. det(k) != 0
-        guard detKey != 0.0 else { throw HillCipherKeyError.SingularMatrix }
+        guard detKey != 0.0 else { throw HillCipherError.SingularMatrix }
         
         // (2) validate that det(key) is co-prime with 26, i.e. gcd(det(key), 26) = 1
         guard extendedGCD(for: Int(detKey), and: 26).gcd == 1
-            else { throw HillCipherKeyError.NoModularInverse }
-        
-        return true
+            else { throw HillCipherError.NoModularInverse }
     }
+    
 }
 
 
 // MARK: Error String Convertible Extension
 
-extension HillCipherKeyError : CustomStringConvertible {
+extension HillCipherError : CustomStringConvertible {
     public var description: String {
         switch self {
         case .InvalidKeyElement:
@@ -145,6 +163,8 @@ extension HillCipherKeyError : CustomStringConvertible {
             return "Given key matrix is singular"
         case .NoModularInverse:
             return "Given key matrix is not invertible under (mod 26)"
+        case .InvalidMessageLength:
+            return "Message does not evenly divide into length of key"
         }
     }
 }
