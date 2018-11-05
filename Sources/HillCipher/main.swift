@@ -18,10 +18,16 @@ do {
     var flag = CodecFlag.neither
     
     if arguments.isEmpty {
-        flag = .both
+        flag = .neither
     } else {
-        let encode = result.get(encrypt)!
-        let decode = result.get(decrypt)!
+        var encode = false
+        var decode = false
+        if let _ = result.get(encrypt) {
+            encode = true
+        }
+        if let _ = result.get(decrypt) {
+            decode = true
+        }
         
         if encode && decode {
             flag = .both
@@ -43,4 +49,4 @@ do {
 }
 
 
-print("やった")
+//print("やった")
